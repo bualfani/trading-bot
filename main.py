@@ -68,3 +68,35 @@ while True:
             elif symbol in cryptos:
                 order = rh.orders.order_buy_crypto_by_price(symbol, position_size, price)
             print(f'Bought {position_size} {symbol} at ${price:.2f}')
+
+            # Set a stop-loss order to limit the potential losses
+            stop_loss_price = round(price * (1 - stop_loss_pct), 2)
+            if symbol in stocks:
+                stop_loss_order = rh.orders.order_sell_limit(symbol, position_size, stop_loss_price)
+            elif symbol in cryptos:
+                stop_loss_order = rh.orders.order_sell_crypto_by_price(symbol, position_size, stop_loss_price)
+            print(f'Set a stop-loss order for {position_size} {symbol} at ${stop_loss_price:.2f}')
+
+            # Wait for 5min before checking the next opportunity to trade
+            time.sleep(300)
+
+            # Check if the price has touched or crossed the lower Bollinger Band and the RSI is oversold (below 30) and
+            # he MACD histogram is negative
+        elif close_prices[-1] <= bb_lower[-1] and rsi[-1] < 30 and macdhist[-1] < 0:
+            # Calculate the number of shares to sell based on the available position and risk management parameters
+            price = float(prices[-1]['close_price'])
+            if symbol in stocks:
+                position_size = min(max_position_size, capital / price)
+            elif symbol in cryptos:
+                position_size = min(max_position_size * price, capital)
+            position_size = round(position_size, 3)
+
+            # Place a sell order for the asset
+            if symbol in stocks:
+                order = rh.orders.order_sell_limit(symbol, position_size, price)
+            elif symbol in cryptos:
+                order = rh.orders.order_sell_crypto_by_price(symbol, position_size, price)
+            print(f'Sold {position_size} {symbol} at ${price:.2f}')
+
+            # Wait for 5min before checking the next opportunity to trade
+            time.sleep(300)
